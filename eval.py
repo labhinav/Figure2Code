@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os  # Import the os module
 from codebleu import calc_codebleu
+from datasets import load_dataset
 
 def get_image_mse(preds,targets):
     total_mse=0
@@ -11,60 +13,82 @@ def get_image_mse(preds,targets):
     average_mse = total_mse/len(preds)
     return average_mse
 
-def batch_process_images(file_names, batch_size=10):
-    """Process images in batches and calculate MSE."""
-    num_images = len(file_names)
+def get_l1(preds,targets):
+    total_l1=0
+    for i in range(len(preds)):
+        #split the string into a list of floats
+        preds[i] = [float(x) for x in preds[i].split(',')]
+        targets[i] = [float(x) for x in targets[i].split(',')]
+        l1 = np.mean(np.abs(preds[i] - targets[i]))
+        total_l1+=l1
+    average_l1 = total_l1/len(preds)
+    return average_l1
+
+def batch_process_images(df, format_string_pred, batch_size=10):
+    """Process images in batches and calculate MSE.
+    
+    Args:
+        df (pandas.DataFrame): DataFrame containing the images column.
+        format_string_pred (str): Format string for predicted images path.
+        batch_size (int): Number of images to process in each batch.
+
+    Returns:
+        float: Average MSE over all batches.
+    """
+    num_images = len(df)
     batch_mse = []
+    batch_sizes = []
     for start in range(0, num_images, batch_size):
-        end = start + batch_size
+        end = min(start + batch_size, num_images)  # Ensure we don't go out of bounds
         targets = []
         preds = []
-        for file_name in file_names[start:end]:
-            image = plt.imread(f'images/{file_name}')
-            targets.append(image)
-            # add a random prediction
-            preds.append(np.random.rand(*image.shape))
+        for i in range(start, end):
+            # Get the target image from the DataFrame
+            target_file_name = df['og_file_name'][i]
+
+            # Construct the predicted image file name using the format string and index
+            pred_file_name = format_string_pred.format(i)
+
+            # Check if pred_image path exists
+            if not os.path.exists(pred_file_name):
+                continue
+
+            # Read the target image from images/ folder
+            target_image = plt.imread(os.path.join('images', target_file_name))
+            pred_image = plt.imread(pred_file_name)
+
+            targets.append(target_image)
+            preds.append(pred_image)
+        batch_sizes.append(len(preds))
+
+        # Calculate MSE for the current batch
         mse = get_image_mse(preds, targets)
         batch_mse.append(mse)
         print({'start': start, 'end': end, 'mse': mse})
-    return np.mean(batch_mse)
+    #calculate the average mse weighted by the batch sizes
+    weighted_mse = np.average(batch_mse, weights=batch_sizes)
+    return weighted_mse
 
-def get_codebleu_scores(df):
+
+def get_codebleu_scores(df, format_string_pred):
     total_codebleu=0
-    random_code = """
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Generate random data
-x = np.random.rand(50)
-y = 2 * x + np.random.normal(0, 0.1, 50)  # y = 2x + noise
-
-# Create a scatter plot
-plt.scatter(x, y, color='blue', label='Data points')
-
-# Fit a line to the random data
-m, b = np.polyfit(x, y, 1)  # Fit a 1-degree polynomial (line) to the data
-plt.plot(x, m*x + b, color='red', label=f'Fitted line: y={m:.2f}x+{b:.2f}')
-
-# Adding labels and title
-plt.xlabel('Random X values')
-plt.ylabel('Random Y values')
-plt.title('Random Scatter Plot with Fitted Line')
-plt.legend()
-
-# Show the plot
-plt.show()
-"""
-    for index, row in df.iterrows():
-        codebleu_score = calc_codebleu([row['code']], [random_code], lang="python", weights=(0.25, 0.25, 0.25, 0.25), tokenizer=None)
+    for index in range(len(df)):
+        target_file = format_string_pred.format(index)
+        #read code from the file
+        with open(target_file, 'r') as f:
+            target_code = f.read()
+        codebleu_score = calc_codebleu([df['code'][index]], [target_code], lang="python", weights=(0.25, 0.25, 0.25, 0.25), tokenizer=None)
         total_codebleu+=codebleu_score['codebleu']
         # print(codebleu_score['codebleu'])
     return total_codebleu/len(df)
 
-# Read the CSV file
-df = pd.read_csv('images/metadata.csv')
-
+# Load a dataset (e.g., 'squad', 'glue', etc.)
+dataset = load_dataset('abhinavl/figure2code_data')
+#access the test split
+df = dataset['test']
 # Process images in batches
-# final_mse = batch_process_images(df['file_name'].tolist())
-# print(final_mse)
-print(get_codebleu_scores(df))
+final_mse = batch_process_images(df, 'inferenced_output_processed_images/test_{:d}.py.png', batch_size=10)
+print(final_mse)
+print(get_codebleu_scores(df, 'inference_output_processed/test_{:d}.py'))
+
+# print(get_l1(df['values'],df['values']))

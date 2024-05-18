@@ -33,6 +33,6 @@ if data:
         df.loc[len(df)] = [labels, values, title, value_heading]
         if(len(df) % 100 == 0):
             print(len(df))
-    df.to_csv('metadata/train_metadata.csv', index=False)
+    df.to_csv('metadata/train_metadata.csv', index=True)
 else:
     print("The JSON file is empty.")
