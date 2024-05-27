@@ -1,6 +1,6 @@
 *.json
 .DS_Store
-images/*
+images*
 inference*
 LLaVA/google-cloud-sdk/
 LLaVA/inference_output/
