@@ -141,8 +141,14 @@ def get_codebleu_scores_from_df(df_preds, df_targets):
 dataset = load_dataset('abhinavl/figure2code_data')
 #access the test split
 df = dataset['test']
+# format_string_pred = 'inference_output_git_processed/test_{}.py'
+# codebleu_score = get_codebleu_scores(df, format_string_pred)
+# print("CodeBLEU Score:", codebleu_score)
+# format_string_pred = 'inference_output_git_processed_images/test_{}.py.png'
+# average_mse = batch_process_images(df, format_string_pred)
+# print("Average MSE:", average_mse)
 pred_values = df['values']
-average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_values/test_{}.txt')
+average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_git_values/test_{}.txt')
 print("Average Padding L1 Distance:", average_padding_l1)
 print("Failed percentage:", len(failed_files)/len(pred_values))
 print("Failed files:", failed_files)

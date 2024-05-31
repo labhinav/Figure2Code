@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 
-file_path = 'results/generated_codes_git.csv'
+file_path = 'results/generated_codes_git_replaced.csv'
 folder_path = None  # Replace with the actual folder path
 output_folder_path = 'inference_output_git_processed'  # Replace with the path of the new folder
 
@@ -47,32 +47,33 @@ if file_path is not None:
         
         output_file_path = os.path.join(output_folder_path, f"test_{i}.py")  # Create the output file path
 
-        lines = file
-        print(lines)
-        break
-        # # Remove starting <s> tags
-        # lines = [line.replace('<s>', '') for line in lines]
+        #split the code into lines
+        lines = file.split('\n')
+        # Remove starting <s> tags
+        lines = [line.replace('<s>', '') for line in lines]
 
-        # #Remove ending </s> tags
-        # lines = [line.replace('</s>', '') for line in lines]
+        #Remove ending </s> tags
+        lines = [line.replace('</s>', '') for line in lines]
 
-        # # Find the index of the first import statement
-        # import_index = next((i for i, line in enumerate(lines) if line.startswith('import') or line.startswith('from')), None)
+        #filter ending and trailing whitespaces
+        lines = [line.strip() for line in lines]
+        
+        # Find the index of the first import statement
+        import_index = next((i for i, line in enumerate(lines) if line.startswith('import') or line.startswith('from')), None)
 
-        # if import_index is not None:
-        #     # Remove all text before the first import statement
-        #     lines = lines[import_index:]
+        if import_index is not None:
+            # Remove all text before the first import statement
+            lines = lines[import_index:]
 
-        # # Find the index of plt.show()
-        # show_index = next((i for i, line in enumerate(lines) if 'plt.show()' in line), None)
+        # Find the index of plt.show()
+        show_index = next((i for i, line in enumerate(lines) if 'plt.show()' in line), None)
 
-        # if show_index is not None:
-        #     # Remove all text after plt.show()
-        #     lines = lines[:show_index+1]
+        if show_index is not None:
+            # Remove all text after plt.show()
+            lines = lines[:show_index+1]
 
-        # #filter ending and trailing whitespaces
-        # lines = [line.strip() for line in lines]
+        
 
-        # with open(output_file_path, 'w') as file:  # Write to the output file path
-        #     file.write('\n'.join(lines))  # Write the lines with original spacing
+        with open(output_file_path, 'w') as file:  # Write to the output file path
+            file.write('\n'.join(lines))  # Write the lines with original spacing
 

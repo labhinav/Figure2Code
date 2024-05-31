@@ -15,10 +15,10 @@ def extract_values_from_file(file_path):
                 break
     return values
 
-folder_path = 'inference_output_processed'  
+folder_path = 'inference_output_git_processed'  
 
 # Create a new folder to save the values
-output_folder_path = 'inference_output_values' 
+output_folder_path = 'inference_output_git_values' 
 os.makedirs(output_folder_path, exist_ok=True)
 
 # Iterate over all files in the folder
