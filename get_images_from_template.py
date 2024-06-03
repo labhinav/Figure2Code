@@ -8,9 +8,9 @@ def execute_code_from_df(df):
             print(f"Processing row {index}...")
         exec(row['code'], globals())
         # Save the figure after execution
-        plt.savefig(f"images_challenge/figure_{index}.png")
+        plt.savefig(f"inference_output_git_values_imaged/figure_{index}.png")
         plt.close()  
 
 # Load the dataframe from the csv file
-df = pd.read_csv('metadata/train_metadata_with_code_challenge.csv')
+df = pd.read_csv('results/generated_codes_new_replaced.csv')
 execute_code_from_df(df)

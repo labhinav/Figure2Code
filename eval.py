@@ -58,7 +58,7 @@ def get_l1(preds,format_string_pred):
         pred_values = preds[i]
         pred_values = [float(x) for x in pred_values[1:-1].split(',')]
         l1 = min_l1_distance_with_padding(pred_values, target_values)
-        print(l1)
+        # print(l1)
         total_l1+=l1
     average_l1 = total_l1/len(preds)
     return average_l1, failed_files
@@ -71,7 +71,7 @@ def get_image_mse(preds,targets):
     average_mse = total_mse/len(preds)
     return average_mse
 
-def batch_process_images(df, format_string_pred, batch_size=10):
+def batch_process_images(df, format_string_pred, image_folder, batch_size=10):
     """Process images in batches and calculate MSE.
     
     Args:
@@ -101,7 +101,7 @@ def batch_process_images(df, format_string_pred, batch_size=10):
                 continue
 
             # Read the target image from images/ folder
-            target_image = plt.imread(os.path.join('images', target_file_name))
+            target_image = plt.imread(os.path.join(image_folder, target_file_name))
             pred_image = plt.imread(pred_file_name)
 
             targets.append(target_image)
@@ -111,7 +111,7 @@ def batch_process_images(df, format_string_pred, batch_size=10):
         # Calculate MSE for the current batch
         mse = get_image_mse(preds, targets)
         batch_mse.append(mse)
-        print({'start': start, 'end': end, 'mse': mse})
+        # print({'start': start, 'end': end, 'mse': mse})
     #calculate the average mse weighted by the batch sizes
     weighted_mse = np.average(batch_mse, weights=batch_sizes)
     return weighted_mse
@@ -137,18 +137,87 @@ def get_codebleu_scores_from_df(df_preds, df_targets):
         # print(codebleu_score['codebleu'])
     return total_codebleu/len(df_preds)
 
+
+
+def jaccard_similarity(list1, list2):
+    set1, set2 = set(list1), set(list2)
+    intersection = len(set1 & set2)
+    union = len(set1 | set2)
+    return intersection / union if union != 0 else 0
+
+def get_average_jaccard(preds, format_string_pred):
+    total_jaccard = 0
+    failed_files = []
+    for i in range(len(preds)):
+        target_file = format_string_pred.format(i)
+        try:
+            with open(target_file, 'r') as f:
+                target_values = f.readlines()
+                target_values = [x.strip() for x in target_values]
+        except (ValueError, FileNotFoundError):
+            failed_files.append(target_file)
+            continue
+
+        try:
+            pred_values = [x.strip() for x in preds[i][1:-1].split(',')]
+        except ValueError:
+            failed_files.append(target_file)
+            continue
+
+        jaccard = jaccard_similarity(pred_values, target_values)
+        total_jaccard += jaccard
+
+    average_jaccard = total_jaccard / len(preds)
+    return average_jaccard, failed_files
+
+def extract_chart_type(code):
+    if 'plt.bar' in code:
+        return 'bar'
+    elif 'plt.scatter' in code:
+        return 'scatter'
+    elif 'plt.pie' in code:
+        return 'pie'
+    else:
+        return 'other'
+
+def get_chart_accuracy(df, format_string_pred):
+    correct_count = 0
+    for index in range(len(df)):
+        target_file = format_string_pred.format(index)
+        # read code from the file
+        with open(target_file, 'r') as f:
+            target_code = f.read()
+
+        pred_code = df['code'][index]
+
+        target_chart_type = extract_chart_type(target_code)
+        pred_chart_type = extract_chart_type(pred_code)
+
+        if target_chart_type == pred_chart_type:
+            correct_count += 1
+
+    accuracy = correct_count / len(df)
+    return accuracy
+
 # Load a dataset (e.g., 'squad', 'glue', etc.)
-dataset = load_dataset('abhinavl/figure2code_data')
+dataset = load_dataset('abhinavl/figure2code_new_data_square')
 #access the test split
 df = dataset['test']
-# format_string_pred = 'inference_output_git_processed/test_{}.py'
-# codebleu_score = get_codebleu_scores(df, format_string_pred)
-# print("CodeBLEU Score:", codebleu_score)
-# format_string_pred = 'inference_output_git_processed_images/test_{}.py.png'
-# average_mse = batch_process_images(df, format_string_pred)
-# print("Average MSE:", average_mse)
+format_string_pred = 'inference_output_new/test_{}.py'
+codebleu_score = get_codebleu_scores(df, format_string_pred)
+print("CodeBLEU Score:", codebleu_score)
+chart_accuracy = get_chart_accuracy(df, format_string_pred)
+print("Chart Accuracy:", chart_accuracy)
+format_string_pred = 'inference_output_new_images_square/test_{}.py.png'
+average_mse = batch_process_images(df, format_string_pred, 'images_new_square/')
+print("Average MSE:", average_mse)
 pred_values = df['values']
-average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_git_values/test_{}.txt')
-print("Average Padding L1 Distance:", average_padding_l1)
+average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_new_values/test_{}.txt')
+print("HistDist:", average_padding_l1)
 print("Failed percentage:", len(failed_files)/len(pred_values))
+print("Failed files:", failed_files)
+pred_categories = df['labels']
+average_jaccard, failed_files = get_average_jaccard(pred_categories, 'inference_output_new_categories/test_{}.txt')
+print("Average Jaccard Similarity:", average_jaccard)
+print("Failed percentage:", len(failed_files)/len(pred_categories))
 print("Failed files:", failed_files)

@@ -5,20 +5,21 @@ def extract_values_from_file(file_path):
     values = []
     with open(file_path, 'r') as file:
         for line in file:
-            if line.strip().startswith('values ='):
+            if line.strip().startswith('categories='):
                 # Extract the part after 'values ='
                 values_str = line.split('=')[1].strip()
                 if ']' not in values_str:
                     values_str += ']'
                 # Use ast.literal_eval to safely evaluate the list
+                print(values_str)
                 values = ast.literal_eval(values_str)
                 break
     return values
 
-folder_path = 'inference_output_git_processed'  
+folder_path = 'inference_output_new'  
 
 # Create a new folder to save the values
-output_folder_path = 'inference_output_git_values' 
+output_folder_path = 'inference_output_new_categories' 
 os.makedirs(output_folder_path, exist_ok=True)
 
 # Iterate over all files in the folder
