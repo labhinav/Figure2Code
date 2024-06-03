@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import os  # Import the os module
 from codebleu import calc_codebleu
 from datasets import load_dataset
+from skimage.color import rgb2gray
+from skimage.filters import threshold_otsu
+
 
 def min_l1_distance_with_padding(list1, list2):
     max_val = max(list2, default=0)
@@ -170,6 +173,62 @@ def get_average_jaccard(preds, format_string_pred):
     average_jaccard = total_jaccard / len(preds)
     return average_jaccard, failed_files
 
+def convert_to_black_and_white(image):
+    grayscale_image = rgb2gray(image)
+    thresh = threshold_otsu(grayscale_image)
+    binary_image = grayscale_image > thresh
+    return binary_image.astype(np.float64)
+
+def batch_process_images_bw(df, format_string_pred, image_folder, batch_size=10):
+    """Process images in batches and calculate MSE.
+    
+    Args:
+        df (pandas.DataFrame): DataFrame containing the images column.
+        format_string_pred (str): Format string for predicted images path.
+        batch_size (int): Number of images to process in each batch.
+
+    Returns:
+        float: Average MSE over all batches.
+    """
+    num_images = len(df)
+    batch_mse = []
+    batch_sizes = []
+    for start in range(0, num_images, batch_size):
+        end = min(start + batch_size, num_images)  # Ensure we don't go out of bounds
+        targets = []
+        preds = []
+        for i in range(start, end):
+            # Get the target image from the DataFrame
+            target_file_name = df['og_file_name'][i]
+
+            # Construct the predicted image file name using the format string and index
+            pred_file_name = format_string_pred.format(i)
+
+            # Check if pred_image path exists
+            if not os.path.exists(pred_file_name):
+                continue
+
+            # Read the target image from images/ folder
+            target_image = plt.imread(os.path.join(image_folder, target_file_name))
+            pred_image = plt.imread(pred_file_name)
+
+            # Convert images to black and white
+            target_image_bw = convert_to_black_and_white(target_image)
+            pred_image_bw = convert_to_black_and_white(pred_image)
+
+            targets.append(target_image_bw)
+            preds.append(pred_image_bw)
+        batch_sizes.append(len(preds))
+
+        # Calculate MSE for the current batch
+        mse = get_image_mse(preds, targets)
+        batch_mse.append(mse)
+        print({'start': start, 'end': end, 'mse': mse})
+    
+    # Calculate the average mse weighted by the batch sizes
+    weighted_mse = np.average(batch_mse, weights=batch_sizes)
+    return weighted_mse
+
 def extract_chart_type(code):
     if 'plt.bar' in code:
         return 'bar'
@@ -200,9 +259,9 @@ def get_chart_accuracy(df, format_string_pred):
     return accuracy
 
 # Load a dataset (e.g., 'squad', 'glue', etc.)
-dataset = load_dataset('abhinavl/figure2code_new_data_square')
+dataset = load_dataset('abhinavl/figure2code_challenge_data_square')
 #access the test split
-df = dataset['test']
+df = dataset['train']
 format_string_pred = 'inference_output_new/test_{}.py'
 codebleu_score = get_codebleu_scores(df, format_string_pred)
 print("CodeBLEU Score:", codebleu_score)
@@ -211,6 +270,8 @@ print("Chart Accuracy:", chart_accuracy)
 format_string_pred = 'inference_output_new_images_square/test_{}.py.png'
 average_mse = batch_process_images(df, format_string_pred, 'images_new_square/')
 print("Average MSE:", average_mse)
+# greyscale_average_mse = batch_process_images_bw(df, format_string_pred, 'images_new_square/')
+# print("Black & White Average MSE:", greyscale_average_mse)
 pred_values = df['values']
 average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_new_values/test_{}.txt')
 print("HistDist:", average_padding_l1)
