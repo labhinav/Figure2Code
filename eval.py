@@ -5,6 +5,64 @@ import os  # Import the os module
 from codebleu import calc_codebleu
 from datasets import load_dataset
 
+def min_l1_distance_with_padding(list1, list2):
+    max_val = max(list2, default=0)
+    m, n = len(list1), len(list2)
+    #swap the lists if the first list is longer
+    if m > n:
+        list1, list2 = list2, list1
+        m, n = n, m
+    # Initialize the dp table
+    dp = [[float('inf')] * (n + 1) for _ in range(m + 1)]
+    dp[0][0] = 0
+    
+    # Initialize the first row and first column
+    for i in range(1, m + 1):
+        dp[i][0] = dp[i-1][0] + abs(list1[i-1] - 0)
+    for j in range(1, n + 1):
+        dp[0][j] = dp[0][j-1] + abs(0 - list2[j-1])
+    
+    # Fill the dp table
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            dp[i][j] = min(dp[i-1][j-1] + abs(list1[i-1] - list2[j-1]),
+                           dp[i-1][j] + abs(list1[i-1] - 0))
+    
+    ans = dp[m][n]
+    #normalize the answer by the maximum value in the lists, take into account that list may be empty
+    if max_val == 0:
+        normalized_ans = ans
+    else:
+        normalized_ans = ans/max_val
+    #clip the answer by max(m,n)
+    normalized_ans = min(normalized_ans, max(m,n))
+    return normalized_ans
+
+#write a function to get average min padded l1 between two list of lists
+def get_l1(preds,format_string_pred):
+    total_l1=0
+    failed_files = []
+    for i in range(len(preds)):
+        #apply the index to the format string to get the target file
+        # print(i,preds[i])
+        target_file = format_string_pred.format(i)
+        #read a list of floats from the file. each line is a float
+        with open(target_file, 'r') as f:
+            target_values = f.readlines()
+            #split the string into a list of floats
+            try:
+                target_values = [float(x) for x in target_values]
+            except ValueError:
+                failed_files.append(target_file)
+                continue
+        pred_values = preds[i]
+        pred_values = [float(x) for x in pred_values[1:-1].split(',')]
+        l1 = min_l1_distance_with_padding(pred_values, target_values)
+        print(l1)
+        total_l1+=l1
+    average_l1 = total_l1/len(preds)
+    return average_l1, failed_files
+
 def get_image_mse(preds,targets):
     total_mse=0
     for i in range(len(preds)):
@@ -12,17 +70,6 @@ def get_image_mse(preds,targets):
         total_mse+=mse
     average_mse = total_mse/len(preds)
     return average_mse
-
-def get_l1(preds,targets):
-    total_l1=0
-    for i in range(len(preds)):
-        #split the string into a list of floats
-        preds[i] = [float(x) for x in preds[i].split(',')]
-        targets[i] = [float(x) for x in targets[i].split(',')]
-        l1 = np.mean(np.abs(preds[i] - targets[i]))
-        total_l1+=l1
-    average_l1 = total_l1/len(preds)
-    return average_l1
 
 def batch_process_images(df, format_string_pred, batch_size=10):
     """Process images in batches and calculate MSE.
@@ -82,13 +129,26 @@ def get_codebleu_scores(df, format_string_pred):
         # print(codebleu_score['codebleu'])
     return total_codebleu/len(df)
 
+def get_codebleu_scores_from_df(df_preds, df_targets):
+    total_codebleu=0
+    for index in range(len(df_preds)):
+        codebleu_score = calc_codebleu([df_preds['code'][index]], [df_targets['Generated_Code'][index]], lang="python", weights=(0.25, 0.25, 0.25, 0.25), tokenizer=None)
+        total_codebleu+=codebleu_score['codebleu']
+        # print(codebleu_score['codebleu'])
+    return total_codebleu/len(df_preds)
+
 # Load a dataset (e.g., 'squad', 'glue', etc.)
 dataset = load_dataset('abhinavl/figure2code_data')
 #access the test split
 df = dataset['test']
-# Process images in batches
-final_mse = batch_process_images(df, 'inferenced_output_processed_images/test_{:d}.py.png', batch_size=10)
-print(final_mse)
-print(get_codebleu_scores(df, 'inference_output_processed/test_{:d}.py'))
-
-# print(get_l1(df['values'],df['values']))
+# format_string_pred = 'inference_output_git_processed/test_{}.py'
+# codebleu_score = get_codebleu_scores(df, format_string_pred)
+# print("CodeBLEU Score:", codebleu_score)
+# format_string_pred = 'inference_output_git_processed_images/test_{}.py.png'
+# average_mse = batch_process_images(df, format_string_pred)
+# print("Average MSE:", average_mse)
+pred_values = df['values']
+average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_git_values/test_{}.txt')
+print("Average Padding L1 Distance:", average_padding_l1)
+print("Failed percentage:", len(failed_files)/len(pred_values))
+print("Failed files:", failed_files)
