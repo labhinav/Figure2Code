@@ -267,11 +267,6 @@ def get_chart_accuracy(df, format_string_pred):
 dataset = load_dataset('abhinavl/figure2code_new_data_square', split='train')
 #shuffle the dataset
 df = dataset
-# print(df)
-# print(dataset[0])
-# print(df[0])
-#access the test split
-df = dataset[0:100]
 # print(type(df))
 format_string_pred = 'llava_fine_tuned/filtered_code_new/test_{}.py'
 codebleu_score = get_codebleu_scores(df, format_string_pred)
