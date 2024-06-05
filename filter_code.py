@@ -2,9 +2,9 @@ import os
 import pandas as pd
 
 
-file_path = 'results/generated_codes_new_replaced.csv'
-folder_path = None  # Replace with the actual folder path
-output_folder_path = 'inference_output_new'  # Replace with the path of the new folder
+file_path1 = None
+folder_path = 'llava_fine_tuned/figure2code_challenge_data_square'
+output_folder_path = 'llava_fine_tuned/filtered_code_challenge'  # Replace with the path of the new folder
 
 if folder_path is not None:
     for filename in os.listdir(folder_path):
@@ -41,8 +41,8 @@ if folder_path is not None:
             with open(output_file_path, 'w') as file:  # Write to the output file path
                 file.write('\n'.join(lines))  # Write the lines with original spacing
 
-if file_path is not None:
-    df = pd.read_csv(file_path)
+if file_path1 is not None:
+    df = pd.read_csv(file_path1)
     for i,file in enumerate(df['Generated_Code']):
         
         output_file_path = os.path.join(output_folder_path, f"test_{i}.py")  # Create the output file path

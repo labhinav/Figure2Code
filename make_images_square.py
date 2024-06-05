@@ -36,6 +36,6 @@ def process_images_in_folder(input_folder, output_folder, color=(255, 255, 255))
             add_whitespace_to_square(input_image_path, output_image_path, color)
 
 # Example usage
-input_folder = 'inference_output_new_images/'  # Replace with your input folder path
-output_folder = 'inference_output_new_images_square/'  # Replace with your desired output folder path
+input_folder = 'llava_fine_tuned/images_challenge/'  # Replace with your input folder path
+output_folder = 'llava_fine_tuned/images_challenge_square/'  # Replace with your desired output folder path
 process_images_in_folder(input_folder, output_folder)
