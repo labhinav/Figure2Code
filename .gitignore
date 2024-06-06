@@ -4,4 +4,7 @@ images*
 inference*
 LLaVA/google-cloud-sdk/
 LLaVA/inference_output/
+<<<<<<< HEAD
 models/*
+=======
+>>>>>>> c12f045086cc314c6ec9ce9456746e56447dcc53

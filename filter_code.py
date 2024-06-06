@@ -2,9 +2,9 @@ import os
 import pandas as pd
 
 
-file_path = 'results/generated_codes_git_replaced.csv'
+file_path = 'results/generated_codes_new_replaced.csv'
 folder_path = None  # Replace with the actual folder path
-output_folder_path = 'inference_output_git_processed'  # Replace with the path of the new folder
+output_folder_path = 'inference_output_new'  # Replace with the path of the new folder
 
 if folder_path is not None:
     for filename in os.listdir(folder_path):

@@ -13,7 +13,7 @@ def clean_code(code):
 
 
 # Load the DataFrame from a CSV file
-df = pd.read_csv('results/generated_codes_git.csv')
+df = pd.read_csv('results/generated_codes_new.csv')
 
 # Specify the column where the replacement should occur
 column_name = 'Generated_Code'
@@ -23,7 +23,7 @@ df[column_name] = df[column_name].str.replace('< n >', '\n')
 # Apply the clean_code function to the specified column
 df[column_name] = df[column_name].apply(clean_code)
 # Optionally, save the modified DataFrame back to a CSV file
-df.to_csv('results/generated_codes_git_replaced.csv', index=False)
+df.to_csv('results/generated_codes_new_replaced.csv', index=False)
 
 # Display the modified DataFrame
 print(df)
