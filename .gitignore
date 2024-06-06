@@ -1,10 +1,17 @@
 *.json
-.DS_Store
+.DS_Store*
 images*
 inference*
 LLaVA/google-cloud-sdk/
 LLaVA/inference_output/
 <<<<<<< HEAD
+<<<<<<< HEAD
 models/*
 =======
 >>>>>>> c12f045086cc314c6ec9ce9456746e56447dcc53
+=======
+LLaVA_code/google-cloud-sdk/
+LLaVA_code/all_inference_outputs/
+LLaVA_code/llava-ftmodel-1k/
+LLaVA_code/llava-ftmodel-all/
+>>>>>>> 7a33a6b271627efd01eac6a34983f54b294fe804

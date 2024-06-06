@@ -1,20 +1,19 @@
 import os
 import json
-from PIL import Image
+from tqdm import tqdm
 from datasets import load_dataset
 
-# Load the dataset
-dataset = load_dataset("abhinavl/figure2code_new_data_square", split="train")
-
-# Create directory for images
-image_dir = "figure2code_images"
+image_dir = "./images"
 os.makedirs(image_dir, exist_ok=True)
+
+# Load the dataset and select the first 10 samples
+dataset = load_dataset("abhinavl/figure2code_new_data_square", split="train")
 
 # Initialize the list for JSON content
 json_content = []
 
-# Iterate over the dataset
-for data in dataset:
+# Iterate over the dataset with a progress bar
+for data in tqdm(dataset, desc="Processing images"):
     image = data['image']
     og_file_name = data['og_file_name']
     code = data['code']
@@ -26,7 +25,7 @@ for data in dataset:
     # Create the JSON entry
     json_entry = {
         "id": og_file_name,
-        "image": f"{image_dir}/{og_file_name}",
+        "image": f"{og_file_name}",
         "conversations": [
             {
                 "from": "human",
@@ -43,7 +42,8 @@ for data in dataset:
     json_content.append(json_entry)
 
 # Save the JSON file
-json_path = "figure2code_conversations.json"
+json_path = "./dataset.json"
+os.makedirs(os.path.dirname(json_path), exist_ok=True)
 with open(json_path, 'w') as json_file:
     json.dump(json_content, json_file, indent=4)
 

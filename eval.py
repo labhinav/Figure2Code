@@ -146,6 +146,10 @@ def jaccard_similarity(list1, list2):
     set1, set2 = set(list1), set(list2)
     intersection = len(set1 & set2)
     union = len(set1 | set2)
+    # print(f"List 1: {list1}")
+    # print(f"List 2: {list2}")
+    # print(f"Intersection: {intersection}")
+    # print(f"Union: {union}")
     return intersection / union if union != 0 else 0
 
 def get_average_jaccard(preds, format_string_pred):
@@ -251,7 +255,8 @@ def get_chart_accuracy(df, format_string_pred):
 
         target_chart_type = extract_chart_type(target_code)
         pred_chart_type = extract_chart_type(pred_code)
-
+        # print("Predicted Type",target_chart_type)
+        # print("Target Type",pred_chart_type)
         if target_chart_type == pred_chart_type:
             correct_count += 1
 
@@ -259,26 +264,27 @@ def get_chart_accuracy(df, format_string_pred):
     return accuracy
 
 # Load a dataset (e.g., 'squad', 'glue', etc.)
-dataset = load_dataset('abhinavl/figure2code_challenge_data_square')
-#access the test split
-df = dataset['train']
-format_string_pred = 'inference_output_new/test_{}.py'
+dataset = load_dataset('abhinavl/figure2code_new_data_square', split='train')
+#shuffle the dataset
+df = dataset
+# print(type(df))
+format_string_pred = 'llava_fine_tuned/filtered_code_new/test_{}.py'
 codebleu_score = get_codebleu_scores(df, format_string_pred)
 print("CodeBLEU Score:", codebleu_score)
 chart_accuracy = get_chart_accuracy(df, format_string_pred)
 print("Chart Accuracy:", chart_accuracy)
-format_string_pred = 'inference_output_new_images_square/test_{}.py.png'
+format_string_pred = 'llava_fine_tuned/images_new_square/test_{}.py.png'
 average_mse = batch_process_images(df, format_string_pred, 'images_new_square/')
 print("Average MSE:", average_mse)
 # greyscale_average_mse = batch_process_images_bw(df, format_string_pred, 'images_new_square/')
 # print("Black & White Average MSE:", greyscale_average_mse)
 pred_values = df['values']
-average_padding_l1, failed_files = get_l1(pred_values, 'inference_output_new_values/test_{}.txt')
+average_padding_l1, failed_files = get_l1(pred_values, 'llava_fine_tuned/new_values/test_{}.txt')
 print("HistDist:", average_padding_l1)
 print("Failed percentage:", len(failed_files)/len(pred_values))
 print("Failed files:", failed_files)
 pred_categories = df['labels']
-average_jaccard, failed_files = get_average_jaccard(pred_categories, 'inference_output_new_categories/test_{}.txt')
+average_jaccard, failed_files = get_average_jaccard(pred_categories, 'llava_fine_tuned/new_categories/test_{}.txt')
 print("Average Jaccard Similarity:", average_jaccard)
 print("Failed percentage:", len(failed_files)/len(pred_categories))
 print("Failed files:", failed_files)
