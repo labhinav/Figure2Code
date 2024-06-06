@@ -4,3 +4,7 @@ images*
 inference*
 LLaVA/google-cloud-sdk/
 LLaVA/inference_output/
+LLaVA_code/google-cloud-sdk/
+LLaVA_code/all_inference_outputs/
+LLaVA_code/llava-ftmodel-1k/
+LLaVA_code/llava-ftmodel-all/
