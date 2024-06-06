@@ -29,12 +29,13 @@ def process_images_in_folder(input_folder, output_folder, color=(255, 255, 255))
     
     # Process each image in the input folder
     for filename in os.listdir(input_folder):
+        print(f"Processing image: {filename}")
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
             input_image_path = os.path.join(input_folder, filename)
             output_image_path = os.path.join(output_folder, filename)
             add_whitespace_to_square(input_image_path, output_image_path, color)
 
 # Example usage
-input_folder = 'images/'  # Replace with your input folder path
-output_folder = 'images_square/'  # Replace with your desired output folder path
+input_folder = 'llava_fine_tuned/images_challenge/'  # Replace with your input folder path
+output_folder = 'llava_fine_tuned/images_challenge_square/'  # Replace with your desired output folder path
 process_images_in_folder(input_folder, output_folder)

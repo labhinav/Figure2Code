@@ -1,5 +1,5 @@
 *.json
-.DS_Store
+.DS_Store*
 images*
 inference*
 LLaVA/google-cloud-sdk/
